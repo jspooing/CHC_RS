@@ -148,7 +148,7 @@ TCPINFO *nsread(TCPINFO *info)
 
 }
 
-int main(int argc, char **argv)
+int printNs()
 {
     TCPINFO *tf;
     tf = nsopen();

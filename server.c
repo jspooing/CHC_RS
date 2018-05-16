@@ -18,7 +18,7 @@ void* clnt_connection(void* arg);  //클라이언트 서비스 스레드 함수
 int cntNum=0;  //현재 서비스중인 클라이언트 수 
 int clnt_sock[5]; //클라이언트 소켓 
 
-
+int printNs();
 
 int main(int argc, char ** argv)
 {
@@ -31,6 +31,7 @@ int main(int argc, char ** argv)
 	
 	#ifdef _DEBUG
 		printf("*****************Debug mode*********************\n");
+		printNs();
 	#endif	
 
 	if((serv_sock = socket(AF_INET, SOCK_STREAM, 0))<0)  //서버 소켓 생성 
