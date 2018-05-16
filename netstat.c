@@ -11,6 +11,11 @@ const char *TCPFILE = "/proc/net/tcp";
 const char *FORMAT ="%s%s%s%s%s%s%s%s%s%s";
 static char states[16][20] = { "ESTABLISHED", "SYN_SENT", "SYN_RECV", "FIN_WAIT1", "FIN_WAIT2", "TIME_WAIT", "CLOSE", "CLOSE_WAIT", "LAST_ACK", "LISTEN", "CLOSING", "MAX_STATES"};
 
+
+#define STREAM_IP "125.136.123.241"
+#define STREAM_PORT "8080"
+
+
 // 네트워크 연결 정보를 저장하기 위한 구조체
 struct netinfo
 {
@@ -159,3 +164,48 @@ int printNs()
     }
     nsclose(tf);
 }
+
+char* catchIp(){
+	char buf[1024];
+	TCPINFO *tf;
+	tf = nsopen();
+
+	#ifdef _DEBUG
+		printf("==Estblished ip==\n");
+	#endif
+	memset(buf,0x00,sizeof(buf));
+	while(nsread(tf) != (TCPINFO *)NULL)
+	{	
+		if(!(strcmp(tf->localaddr,STREAM_IP)||strcmp(tf->localport,STREAM_PORT)))
+			#ifdef _DEBUG
+				printf("%s\n",tf->remaddr);
+			#endif
+	}
+	nsclose(tf);
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
