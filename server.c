@@ -19,11 +19,10 @@ int cntNum=0;  //현재 서비스중인 클라이언트 수
 int clnt_sock[5]; //클라이언트 소켓 
 
 int printNs();
-char* catchIp();
+int catchIp(char*);
 
 int main(int argc, char ** argv)
 {
-
 	int serv_sock; // 서버  소켓 
 	struct sockaddr_in serv_addr;   //서버,클라이언트  소켓 주소 구조체 
 	struct sockaddr_in clnt_addr;
@@ -32,8 +31,8 @@ int main(int argc, char ** argv)
 	
 	#ifdef _DEBUG
 		printf("*****************Debug mode*********************\n");
-		printNs();
-		catchIp();
+		//printNs(); // (netsat 옵션)
+		fflush(stdout);
 	#endif	
 
 	if((serv_sock = socket(AF_INET, SOCK_STREAM, 0))<0)  //서버 소켓 생성 
@@ -91,6 +90,7 @@ void *clnt_connection(void* arg){
 	char* ptr;
 	int str_len;
 	char message[BUFSIZE];
+	char buf[BUFSIZE];
 	int i;
 	#ifdef _DEBUG
 		printf("Thread arg = %d\nThread socket = %d\n",*((int *)arg),sock);
@@ -117,10 +117,28 @@ void *clnt_connection(void* arg){
 			fflush(stdout);
 		#endif
 		
-		if(!strcmp(command[0],"network"))
-			write(sock,"network service!",sizeof("network service!"));
-		else if(!strcmp(command[0],"dc"))
-			write(sock,"disconnect service!",sizeof("disconnect service!"));
+		if(!strcmp(command[0],"network")){
+			if(catchIp(buf) > 0 ){
+				str_len = strlen(buf);
+				write(sock,buf,str_len);
+			}
+			else
+				write(sock,"no connection",sizeof("no connection"));
+		}
+		else if(!strcmp(command[0],"dc")){
+			sprintf(buf,"echo '%s' | sudo -kS route add -host %s reject",command[2],command[1]);
+			system(buf);
+			str_len = strlen(buf);
+			write(sock,buf,str_len);
+		}
+
+
+		else if(!strcmp(command[0],"c")){
+			sprintf(buf,"echo '%s' | sudo -kS route del -host %s reject",command[2],command[1]);
+			system(buf);
+			str_len = strlen(buf);
+			write(sock,buf,str_len);
+		}
 		else if(!strcmp(command[0],"log"))
 			write(sock,"log service!",sizeof("log service!"));
 		else if(!strcmp(command[0],"trf"))

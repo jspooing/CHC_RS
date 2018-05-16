@@ -165,24 +165,57 @@ int printNs()
     nsclose(tf);
 }
 
-char* catchIp(){
-	char buf[1024];
+int catchIp(char* buf){
 	TCPINFO *tf;
+	char* list;
 	tf = nsopen();
+	char ip[10][16];
+	int cnt=0;
+	int i;
+	int str_len;
 
 	#ifdef _DEBUG
 		printf("==Estblished ip==\n");
 	#endif
-	memset(buf,0x00,sizeof(buf));
 	while(nsread(tf) != (TCPINFO *)NULL)
 	{	
-		if(!(strcmp(tf->localaddr,STREAM_IP)||strcmp(tf->localport,STREAM_PORT)))
-			#ifdef _DEBUG
-				printf("%s\n",tf->remaddr);
-			#endif
+		if(strcmp(tf->localaddr,STREAM_IP)==0&&strcmp(tf->localport,STREAM_PORT)==0)
+		{	
+			for(i=0; i<cnt; i++)
+			{
+				if((strcmp(tf->remaddr,ip[i]))==0)
+				{	
+					break;
+				}
+			}
+
+			if(i == cnt)
+			{
+				sprintf(ip[cnt],"%s",tf->remaddr);
+				#ifdef _DEBUG
+					printf("ip[%d]= %s\n",cnt,ip[cnt]);
+				#endif
+				
+				cnt++;
+			}
+
+		}
 	}
+	list = buf;
+	memset(list,0x00,sizeof(list));	
+	for(i=0; i < cnt; i ++)
+		sprintf(list,"%s%s/",list,ip[i]);
+	
+	str_len = strlen(buf);
+	buf[str_len-1] = '\0';
+	
+	#ifdef _DEBUG
+		printf("buf in catchIp()\n%s\n",list);
+	#endif
+
 	nsclose(tf);
 	
+	return cnt;
 }
 
 
