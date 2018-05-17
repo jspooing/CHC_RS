@@ -34,6 +34,10 @@ struct netinfo
 
 typedef struct netinfo TCPINFO;
 
+
+int getIp(char arg[][16]);
+
+
 // /proc/net/tcp 파일을 열어서 스트림을 만든다.
 TCPINFO *nsopen()
 {
@@ -166,9 +170,7 @@ int printNs()
 }
 
 int catchIp(char* buf){
-	TCPINFO *tf;
 	char* list;
-	tf = nsopen();
 	char ip[10][16];
 	int cnt=0;
 	int i;
@@ -177,43 +179,20 @@ int catchIp(char* buf){
 	#ifdef _DEBUG
 		printf("==Estblished ip==\n");
 	#endif
-	while(nsread(tf) != (TCPINFO *)NULL)
-	{	
-		if(strcmp(tf->localaddr,STREAM_IP)==0&&strcmp(tf->localport,STREAM_PORT)==0)
-		{	
-			for(i=0; i<cnt; i++)
-			{
-				if((strcmp(tf->remaddr,ip[i]))==0)
-				{	
-					break;
-				}
-			}
 
-			if(i == cnt)
-			{
-				sprintf(ip[cnt],"%s",tf->remaddr);
-				#ifdef _DEBUG
-					printf("ip[%d]= %s\n",cnt,ip[cnt]);
-				#endif
-				
-				cnt++;
-			}
-
-		}
-	}
+	cnt = getIp(ip);
 	list = buf;
 	memset(list,0x00,sizeof(list));	
 	for(i=0; i < cnt; i ++)
 		sprintf(list,"%s%s/",list,ip[i]);
-	
-	str_len = strlen(list);
-	list[str_len-1] = '\n';
+
+	str_len = strlen(list)+1;
+	list[str_len]='\0';
 	
 	#ifdef _DEBUG
 		printf("buf in catchIp()\n%s\n",list);
 	#endif
 
-	nsclose(tf);
 	
 	return cnt;
 }
@@ -223,8 +202,42 @@ int catchIp(char* buf){
 
 
 
+int getIp(char arg[][16]){
+	TCPINFO *tf;
+	tf = nsopen();
+	int cnt=0;
+	int i;
+	
+	while(nsread(tf) != (TCPINFO *)NULL)
+	{	
+		if(strcmp(tf->localaddr,STREAM_IP)==0&&strcmp(tf->localport,STREAM_PORT)==0)
+		{	
+			for(i=0; i<cnt; i++)
+			{
+				if((strcmp(tf->remaddr,arg[i]))==0)
+				{	
+					break;
+				}
+			}
+
+			if(i == cnt)
+			{
+				sprintf(arg[cnt],"%s",tf->remaddr);
+				#ifdef _DEBUG
+					printf("ip[%d]= %s\n",cnt,arg[cnt]);
+				#endif
+				
+				cnt++;
+			}
+
+		}
+	}
 
 
+	nsclose(tf);
+	
+	return cnt;
+}
 
 
 

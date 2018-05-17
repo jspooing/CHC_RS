@@ -15,11 +15,13 @@
 
 void error_handling(char* message); //예외처리 함수 
 void* clnt_connection(void* arg);  //클라이언트 서비스 스레드 함수 
+void* t_wLog(void* arg);
 int cntNum=0;  //현재 서비스중인 클라이언트 수 
 int clnt_sock[5]; //클라이언트 소켓 
 
 int printNs();
 int catchIp(char*);
+int getLog(int,char*,int);
 
 int main(int argc, char ** argv)
 {
@@ -28,13 +30,18 @@ int main(int argc, char ** argv)
 	struct sockaddr_in clnt_addr;
 	int clnt_addr_size;  // 클라이언트 소켓 구조체 사이즈 
 	pthread_t tid[MAX_CLIENT]; // 스레드 구조체 배열 
-	
+	pthread_t tLog;
 	#ifdef _DEBUG
-		system("clear");
 		printf("*****************Debug mode*********************\n");
 		//printNs(); // (netsat 옵션)
 		fflush(stdout);
 	#endif	
+	
+	if(pthread_create(&tLog,NULL,t_wLog,NULL )<0){
+		printf("Logthread err...");
+	}
+
+
 
 	if((serv_sock = socket(AF_INET, SOCK_STREAM, 0))<0)  //서버 소켓 생성 
 	{
@@ -93,14 +100,12 @@ void *clnt_connection(void* arg){
 	char message[BUFSIZE];
 	char buf[BUFSIZE];
 	int i;
-	#ifdef _DEBUG
-		printf("Thread arg = %d\nThread socket = %d\n",*((int *)arg),sock);
-	#endif 
+	
 	memset(message,0x00, sizeof(message));
 	while(str_len = recv(sock,message,BUFSIZE,0)>0){
 		str_len = strlen(message);
 		#ifdef _DEBUG
-			printf("message = %s\nstr_len = %d\n",message,str_len);
+			printf("Client%d = %s\nstr_len = %d\n",sock,message,str_len);
 			fflush(stdout);
 		#endif
 		ptr = strtok(message, " ");
@@ -141,7 +146,7 @@ void *clnt_connection(void* arg){
 			write(sock,buf,str_len);
 		}
 		else if(!strcmp(command[0],"log"))
-			write(sock,"log service!",sizeof("log service!"));
+			getLog(sock,buf,BUFSIZE);		
 		else if(!strcmp(command[0],"trf"))
 			write(sock,"traffic service!",sizeof("traffic service!"));
 		else 
