@@ -30,6 +30,7 @@ int main(int argc, char ** argv)
 	pthread_t tid[MAX_CLIENT]; // 스레드 구조체 배열 
 	
 	#ifdef _DEBUG
+		system("clear");
 		printf("*****************Debug mode*********************\n");
 		//printNs(); // (netsat 옵션)
 		fflush(stdout);
@@ -54,7 +55,7 @@ int main(int argc, char ** argv)
 	if(listen(serv_sock,5)<0)
 		error_handling("listen() error");
 	
-	write(1,"Waiting for client",sizeof("Waiting for client"));
+	write(1,"Waiting for client\n",sizeof("Waiting for client\n"));
 	clnt_addr_size = sizeof(clnt_addr);
 
 	while(1){
@@ -113,7 +114,7 @@ void *clnt_connection(void* arg){
 
 		str_len = strlen(command[0]);
 		#ifdef _DEBUG
-			printf("command = %s\ncommand Length = %d",command[0],str_len);
+			printf("command = %s\ncommand Length = %d\n",command[0],str_len);
 			fflush(stdout);
 		#endif
 		

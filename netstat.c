@@ -206,8 +206,8 @@ int catchIp(char* buf){
 	for(i=0; i < cnt; i ++)
 		sprintf(list,"%s%s/",list,ip[i]);
 	
-	str_len = strlen(buf);
-	buf[str_len-1] = '\0';
+	str_len = strlen(list);
+	list[str_len-1] = '\n';
 	
 	#ifdef _DEBUG
 		printf("buf in catchIp()\n%s\n",list);
