@@ -135,7 +135,7 @@ void *clnt_connection(void* arg){
 			sprintf(buf,"echo '%s' | sudo -kS route add -host %s reject",command[2],command[1]);
 			system(buf);
 			str_len = strlen(buf);
-			write(sock,buf,str_len);
+			//write(sock,buf,str_len);
 		}
 
 
@@ -143,7 +143,7 @@ void *clnt_connection(void* arg){
 			sprintf(buf,"echo '%s' | sudo -kS route del -host %s reject",command[2],command[1]);
 			system(buf);
 			str_len = strlen(buf);
-			write(sock,buf,str_len);
+			//write(sock,buf,str_len);
 		}
 		else if(!strcmp(command[0],"log"))
 			getLog(sock,buf,BUFSIZE);		

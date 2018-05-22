@@ -27,7 +27,7 @@ struct netinfo
     char stat[16];
     int  txq;
     int  rxq;
-    int     uid;
+    int  uid;
     int  idx;
     char uname[24];
 };
@@ -186,8 +186,8 @@ int catchIp(char* buf){
 	for(i=0; i < cnt; i ++)
 		sprintf(list,"%s%s/",list,ip[i]);
 
-	str_len = strlen(list)+1;
-	list[str_len]='\0';
+	str_len = strlen(list);
+	list[str_len]='\n';
 	
 	#ifdef _DEBUG
 		printf("buf in catchIp()\n%s\n",list);
@@ -238,20 +238,4 @@ int getIp(char arg[][16]){
 	
 	return cnt;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
