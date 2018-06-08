@@ -15,7 +15,7 @@ static char states[16][20] = { "ESTABLISHED", "SYN_SENT", "SYN_RECV", "FIN_WAIT1
 #define STREAM_IP "125.136.123.241"
 #define STREAM_PORT "8080"
 
-
+int getBlack(char arg[][16]);
 // 네트워크 연결 정보를 저장하기 위한 구조체
 struct netinfo
 {
@@ -170,28 +170,39 @@ int printNs()
 }
 
 int catchIp(char* buf){
-	char* list;
 	char ip[10][16];
+	char bip[10][16];
 	int cnt=0;
+	int bcnt=0;
 	int i;
 	int str_len;
 
-	#ifdef _DEBUG
-		printf("==Estblished ip==\n");
-	#endif
 
 	cnt = getIp(ip);
-	list = buf;
-	memset(list,0x00,sizeof(list));	
-	for(i=0; i < cnt; i ++)
-		sprintf(list,"%s%s/",list,ip[i]);
+	bcnt = getBlack(bip);
 
-	str_len = strlen(list);
-	list[str_len]='\n';
+
+	memset(buf,0x00,sizeof(buf));
+	if(cnt > 0){
+	for(i=0; i < cnt; i ++)
+		sprintf(buf,"%s%s/",buf,ip[i]);
+	}
+	else 
+		sprintf(buf,"no connected list/");
+
+		sprintf(buf,"%s,",buf);
 	
-	#ifdef _DEBUG
-		printf("buf in catchIp()\n%s\n",list);
-	#endif
+		
+	if(bcnt > 0){
+	for(i=0; i < bcnt; i ++)
+		sprintf(buf,"%s%s/",buf,bip[i]);
+	}
+	else 
+		sprintf(buf,"%sno blocked list/",buf);
+
+	str_len = strlen(buf);
+	buf[str_len]='\n';
+	
 
 	
 	return cnt;
@@ -206,7 +217,11 @@ int getIp(char arg[][16]){
 	TCPINFO *tf;
 	tf = nsopen();
 	int cnt=0;
-	int i;
+	char black[10][16];
+	int bcnt=0;
+	int i,bi;
+	
+	bcnt = getBlack(black);
 	
 	while(nsread(tf) != (TCPINFO *)NULL)
 	{	
@@ -219,13 +234,15 @@ int getIp(char arg[][16]){
 					break;
 				}
 			}
+			for(bi = 0; bi < bcnt; bi++)
+			{
+				if((strcmp(tf->remaddr,black[bi]))==0)
+						break;
+			}
 
-			if(i == cnt)
+			if(i == cnt && bi == bcnt)
 			{
 				sprintf(arg[cnt],"%s",tf->remaddr);
-				#ifdef _DEBUG
-					printf("ip[%d]= %s\n",cnt,arg[cnt]);
-				#endif
 				
 				cnt++;
 			}

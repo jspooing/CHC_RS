@@ -1,7 +1,7 @@
 #include "stdio.h"
 #include "stdlib.h"
-#include "string.h"
 #include "unistd.h"
+#include "string.h"
 #include "time.h"
 #include "netinet/in.h"
 #include "arpa/inet.h"
@@ -16,12 +16,15 @@
 void error_handling(char* message); //예외처리 함수 
 void* clnt_connection(void* arg);  //클라이언트 서비스 스레드 함수 
 void* t_wLog(void* arg);
+void* setGtxr(void* arg);
 int cntNum=0;  //현재 서비스중인 클라이언트 수 
 int clnt_sock[5]; //클라이언트 소켓 
-
 int printNs();
 int catchIp(char*);
 int getLog(int,char*,int);
+int getBlack(char arg[][16]);
+extern char global_txr[16];
+
 
 int main(int argc, char ** argv)
 {
@@ -30,7 +33,7 @@ int main(int argc, char ** argv)
 	struct sockaddr_in clnt_addr;
 	int clnt_addr_size;  // 클라이언트 소켓 구조체 사이즈 
 	pthread_t tid[MAX_CLIENT]; // 스레드 구조체 배열 
-	pthread_t tLog;
+	pthread_t tLog,tTrf;
 	#ifdef _DEBUG
 		printf("*****************Debug mode*********************\n");
 		//printNs(); // (netsat 옵션)
@@ -41,6 +44,9 @@ int main(int argc, char ** argv)
 		printf("Logthread err...");
 	}
 
+	if(pthread_create(&tTrf,NULL,setGtxr,NULL )<0){
+		printf("Txthread err...");
+	}
 
 
 	if((serv_sock = socket(AF_INET, SOCK_STREAM, 0))<0)  //서버 소켓 생성 
@@ -91,6 +97,17 @@ void error_handling(char* message){
 	exit(1);
 }
 
+void sendTrf(int sock){
+	char *buf = global_txr;
+	int len; 
+	sprintf(buf,"%s\n",buf);	
+	len = strlen(buf);	
+
+	write(sock,buf,len);
+	return;
+
+}	
+
 void *clnt_connection(void* arg){
 	int* pSock = (int*) arg;
 	int sock = *pSock;
@@ -105,7 +122,8 @@ void *clnt_connection(void* arg){
 	while(str_len = recv(sock,message,BUFSIZE,0)>0){
 		str_len = strlen(message);
 		#ifdef _DEBUG
-			printf("Client%d = %s\nstr_len = %d\n",sock,message,str_len);
+			if(strcmp(message,"trf")!=0)
+			printf("Client%d = %s\n",sock,message);
 			fflush(stdout);
 		#endif
 		ptr = strtok(message, " ");
@@ -118,38 +136,43 @@ void *clnt_connection(void* arg){
 		}
 
 		str_len = strlen(command[0]);
-		#ifdef _DEBUG
-			printf("command = %s\ncommand Length = %d\n",command[0],str_len);
-			fflush(stdout);
-		#endif
-		
+		memset(buf,0x00,sizeof(buf));	
 		if(!strcmp(command[0],"network")){
-			if(catchIp(buf) > 0 ){
-				str_len = strlen(buf);
-				write(sock,buf,str_len);
-			}
-			else
-				write(sock,"no connection",sizeof("no connection"));
+			catchIp(buf);
+			str_len = strlen(buf);
+			write(sock,buf,str_len);
+#ifdef _DEBUG
+			printf("server send c%d:%s\n",sock,buf);
+#endif
 		}
 		else if(!strcmp(command[0],"dc")){
 			sprintf(buf,"echo '%s' | sudo -kS route add -host %s reject",command[2],command[1]);
+			addBlack(command[1]);
 			system(buf);
 			str_len = strlen(buf);
+			#ifdef _DEBUG
+				printf("%s\n",buf);
+			#endif
 			//write(sock,buf,str_len);
 		}
 
-
 		else if(!strcmp(command[0],"c")){
 			sprintf(buf,"echo '%s' | sudo -kS route del -host %s reject",command[2],command[1]);
+			delBlack(command[1]);
 			system(buf);
 			str_len = strlen(buf);
+			#ifdef _DEBUG
+				printf("%s\n",buf);
+			#endif
 			//write(sock,buf,str_len);
 		}
 		else if(!strcmp(command[0],"log"))
 			getLog(sock,buf,BUFSIZE);		
 		else if(!strcmp(command[0],"trf"))
-			write(sock,"traffic service!",sizeof("traffic service!"));
+			sendTrf(sock);
+			
 		else 
+
 			write(sock,"Undefined commnad!",sizeof("Undefined command!"));		
 		
 		memset(message,0x00,sizeof(message));
@@ -164,6 +187,9 @@ void *clnt_connection(void* arg){
 			#endif
 			for(;i<cntNum-1;i++){
 				clnt_sock[i]=clnt_sock[i+1];
+				#ifdef _DEBUG
+					printf("%d : %d << %d : %d",i,clnt_sock[i],i+1,clnt_sock[i+1]);
+				#endif 
 			}
 			break;
 		}

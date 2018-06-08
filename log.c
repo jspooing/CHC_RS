@@ -32,12 +32,6 @@ void* t_wLog(void *data)
 		memset(buf,0x00,sizeof(buf));
 		cnt = getIp(ip);
 
-		#ifdef _DEBUG
-			printf("ip in thread : \n");
-			for(i=0;i<cnt;i++)
-				printf("%d : %s\n",i,ip[i]);
-
-		#endif 
 
 		for(i=0; i<cnt; i++){
 			getLogTime(time);
@@ -48,9 +42,9 @@ void* t_wLog(void *data)
 		write(fd,buf,str_len);
 
 		#ifdef _DEBUG	
-			printf("=========Write Log========\n%s\n====================\n",buf);
+			printf("log :\n%s\n",buf);
 		#endif
-		sleep(30);
+		sleep(60);
 	}
 
 	close(fd);
@@ -65,7 +59,7 @@ int getLogTime(char *tb){
 	timer = time(NULL);
 	t = localtime(&timer);
 
-	sprintf(tb,"%d/%d/%d %d:%d:%d",t->tm_year+1900,t->tm_mon+1,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec);
+	sprintf(tb,"%d/%2d/%2d %d:%d:%d",t->tm_year+1900,t->tm_mon+1,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec);
 
 	return 1;
 }
@@ -79,9 +73,6 @@ int getLog(int sock,char* buf,int buf_size){
 	fd = open("/home/chc/server/log/log.txt",O_RDONLY);
 	if(fd == -1)
 		printf("File Open err .. \n");
-	#ifdef _DEBUG
-		printf("======LOG전송======\n");
-	#endif
 	while(read(fd,buf,buf_size)){
 		str_len = strlen(buf);
 		write(sock,buf,str_len);
