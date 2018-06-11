@@ -14,11 +14,11 @@ int getTx(){
 	int fd;
 	int tx;
 	int len;
-
+	
+	memset(buf,0x00,16);
 	fd = open(TXPATH, O_RDONLY);
 	read(fd, buf, sizeof(buf));
 	close(fd);
-	
 	len = strlen(buf);	
 	len = len -4;
 	buf[len] = NULL;

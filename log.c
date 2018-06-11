@@ -35,7 +35,7 @@ void* t_wLog(void *data)
 
 		for(i=0; i<cnt; i++){
 			getLogTime(time);
-			sprintf(buf,"%s%s\t%s\n",buf,ip[i],time);
+			sprintf(buf,"%s%s-%s,",buf,ip[i],time);
 		}
 
 		str_len = strlen(buf);
@@ -75,9 +75,12 @@ int getLog(int sock,char* buf,int buf_size){
 		printf("File Open err .. \n");
 	while(read(fd,buf,buf_size)){
 		str_len = strlen(buf);
+		buf[str_len++] = '\n';
+		buf[str_len] = '\0';
 		write(sock,buf,str_len);
 		printf("%s",buf);
 	}
+	close(fd);
 
 	return 0;
 }

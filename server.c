@@ -9,16 +9,19 @@
 #include "sys/socket.h"
 #include "pthread.h"
 
-#define BUFSIZE 1024 //버퍼 사이즈 
+#define BUFSIZE 1000000 //버퍼 사이즈 
 #define PORT 9957 //서버 포트 
 #define MAX_CLIENT 5 //클라이언트 최대 
+
 
 void error_handling(char* message); //예외처리 함수 
 void* clnt_connection(void* arg);  //클라이언트 서비스 스레드 함수 
 void* t_wLog(void* arg);
 void* setGtxr(void* arg);
 int cntNum=0;  //현재 서비스중인 클라이언트 수 
-int clnt_sock[5]; //클라이언트 소켓 
+int clnt_sock[5]; //클라이언트 소켓
+int clnt_con[5] = {0};       //클라이언트 접속 정보
+int clnt_indicator = 0;  //클라이언트 교통정리용 
 int printNs();
 int catchIp(char*);
 int getLog(int,char*,int);
@@ -72,19 +75,29 @@ int main(int argc, char ** argv)
 	clnt_addr_size = sizeof(clnt_addr);
 
 	while(1){
+		
+		//클라이언트 접속 슬롯 결정 
+		clnt_indicator = findEmpty(clnt_indicator,clnt_con,MAX_CLIENT);
+		if(clnt_indicator == -1){
+			printf("Server is full\n");
+			sleep(5);
+			clnt_indicator++;
+		}
+		else{
 		//클라이언트 연결 
-		clnt_sock[cntNum] = accept(serv_sock,(struct sockaddr*)&clnt_addr,&clnt_addr_size);
+		clnt_sock[clnt_indicator] = accept(serv_sock,(struct sockaddr*)&clnt_addr,&clnt_addr_size);
 		if(clnt_sock < 0)
 			error_handling("accept() error");
 		#ifdef _DEBUG
-			printf("cntNum = %d\nsocket=%d\n",cntNum,clnt_sock[cntNum]);
+			printf("cntNum = %d\nsocket=%d\n",clnt_indicator,clnt_sock[cntNum]);
 		#endif	
 		
-		if(pthread_create(&tid[cntNum],NULL, clnt_connection, (void *)&clnt_sock[cntNum])<0)
+		if(pthread_create(&tid[clnt_indicator],NULL, clnt_connection, (void *)&clnt_sock[clnt_indicator])<0)
 			printf("Thread Error!\n");
 
+		clnt_con[clnt_indicator] = 1;
 		cntNum++;
-		
+		}
 		
 	}
 	close(serv_sock);
@@ -95,6 +108,22 @@ void error_handling(char* message){
 	fputs(message, stderr);
 	fputc('\n',stderr);
 	exit(1);
+}
+
+int findEmpty(int indicator, int *slot, int s_size){
+	int i= indicator;
+	while(slot[i]){
+		i++;
+		if(i == s_size){
+			i =0 ;
+		}
+		if(i == indicator)
+			return -1;
+	}
+	#ifdef _DEBUG
+		printf("findEmpty()=%d\n",i);
+	#endif
+	return i;
 }
 
 void sendTrf(int sock){
@@ -166,6 +195,8 @@ void *clnt_connection(void* arg){
 			#endif
 			//write(sock,buf,str_len);
 		}
+		else if(!strcmp(command[0],"capt"))
+			//
 		else if(!strcmp(command[0],"log"))
 			getLog(sock,buf,BUFSIZE);		
 		else if(!strcmp(command[0],"trf"))
@@ -179,18 +210,12 @@ void *clnt_connection(void* arg){
 	}
 
  	
-	close(sock);
-	for(i=0;i<cntNum;i++){
+	for(i=0;i<MAX_CLIENT;i++){
 		if(sock == clnt_sock[i]){
 			#ifdef _DEBUG 
 				printf("Client %d is disconnected.\n",i);
 			#endif
-			for(;i<cntNum-1;i++){
-				clnt_sock[i]=clnt_sock[i+1];
-				#ifdef _DEBUG
-					printf("%d : %d << %d : %d",i,clnt_sock[i],i+1,clnt_sock[i+1]);
-				#endif 
-			}
+			clnt_con[i] = 0;
 			break;
 		}
 	}
@@ -198,12 +223,12 @@ void *clnt_connection(void* arg){
 	cntNum--;
 	#ifdef _DEBUG
 		printf("******Replace Clients*********\n Sector : Socket\n");
-		for(i=0;i < cntNum; i++)
-			printf("%d : %d\n",i,clnt_sock[i]);
+		for(i=0;i < MAX_CLIENT; i++)
+			printf("%d : %d\n",i,clnt_con[i]);
 	#endif	
 			
 
-		
+	close(sock);	
 	
 	return 0;
 }
