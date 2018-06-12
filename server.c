@@ -12,12 +12,15 @@
 #define BUFSIZE 1000000 //버퍼 사이즈 
 #define PORT 9957 //서버 포트 
 #define MAX_CLIENT 5 //클라이언트 최대 
-
+#define CAPTURE_PATH "/home/chc/server/capture" // 캡쳐파일 저장 경로 
+#define EMAIL "ghksckd219@hanmail.net"
 
 void error_handling(char* message); //예외처리 함수 
 void* clnt_connection(void* arg);  //클라이언트 서비스 스레드 함수 
 void* t_wLog(void* arg);
 void* setGtxr(void* arg);
+void* recCam(void * arg);
+
 int cntNum=0;  //현재 서비스중인 클라이언트 수 
 int clnt_sock[5]; //클라이언트 소켓
 int clnt_con[5] = {0};       //클라이언트 접속 정보
@@ -27,7 +30,7 @@ int catchIp(char*);
 int getLog(int,char*,int);
 int getBlack(char arg[][16]);
 extern char global_txr[16];
-
+int nsecRec();
 
 int main(int argc, char ** argv)
 {
@@ -37,6 +40,7 @@ int main(int argc, char ** argv)
 	int clnt_addr_size;  // 클라이언트 소켓 구조체 사이즈 
 	pthread_t tid[MAX_CLIENT]; // 스레드 구조체 배열 
 	pthread_t tLog,tTrf;
+
 	#ifdef _DEBUG
 		printf("*****************Debug mode*********************\n");
 		//printNs(); // (netsat 옵션)
@@ -120,9 +124,6 @@ int findEmpty(int indicator, int *slot, int s_size){
 		if(i == indicator)
 			return -1;
 	}
-	#ifdef _DEBUG
-		printf("findEmpty()=%d\n",i);
-	#endif
 	return i;
 }
 
@@ -146,6 +147,7 @@ void *clnt_connection(void* arg){
 	char message[BUFSIZE];
 	char buf[BUFSIZE];
 	int i;
+	pthread_t tRec;
 	
 	memset(message,0x00, sizeof(message));
 	while(str_len = recv(sock,message,BUFSIZE,0)>0){
@@ -199,7 +201,18 @@ void *clnt_connection(void* arg){
 			getLog(sock,buf,BUFSIZE);		
 		else if(!strcmp(command[0],"trf"))
 			sendTrf(sock);
-			
+		else if(!strcmp(command[0],"s"))
+			screenshot();
+		else if(!strcmp(command[0],"r")){
+
+			if(pthread_create(&tRec,NULL,recCam,NULL )<0){
+				printf("Rec thread err...");
+			}
+		}
+		
+		else if(!strcmp(command[0],"n"))
+			nsecRec();
+		
 		else 
 
 			write(sock,"Undefined commnad!",sizeof("Undefined command!"));		
@@ -230,3 +243,75 @@ void *clnt_connection(void* arg){
 	
 	return 0;
 }
+
+int screenshot(){
+	char path[50];
+	char command[1024];
+	system("python3 /home/chc/hc/capture.py");
+	while(1){	
+		if(access("/home/chc/server/capture/foo.jpg",F_OK)==0)
+			break;
+	}
+	sprintf(command,"echo \"screen shot from homecam\" | mutt -s \"screen shot\" %s -a %s/foo.jpg",EMAIL,CAPTURE_PATH);
+	system(command);
+	sprintf(command,"echo y|rm %s/foo.jpg",CAPTURE_PATH);
+	system(command);
+}
+
+
+
+void* recCam(void * arg){
+	char path[50];
+	char command[1024];
+
+	system("python3 /home/chc/hc/rec.py");
+	
+	while(1){	
+		if(access("/home/chc/server/capture/video.h264",F_OK)==0)
+			break;
+	}
+	
+	sprintf(command,"MP4Box -add %s/video.h264 %s/video.mp4",CAPTURE_PATH,CAPTURE_PATH);
+	system(command);
+
+	while(1){	
+		if(access("/home/chc/server/capture/video.mp4",F_OK)==0)
+			break;
+	}
+	
+	sprintf(command,"echo \"video\" | mutt -s \"video file\" %s -a %s/video.mp4",EMAIL,CAPTURE_PATH);
+	system(command);
+	sprintf(command,"rm %s/video.*",CAPTURE_PATH);
+	system(command);
+	return 0;
+}
+
+int nsecRec(){
+
+	char path[50];
+	char command[1024];
+
+	system("echo now|python3 /home/chc/hc/NsecRec.py");
+	
+	while(1){	
+		if(access("/home/chc/server/capture/NsecVideo.h264",F_OK)==0)
+			break;
+	}
+	
+	sprintf(command,"MP4Box -add %s/NsecVideo.h264 %s/NsecVideo.mp4",CAPTURE_PATH,CAPTURE_PATH);
+
+	system(command);
+
+	while(1){	
+		if(access("/home/chc/server/capture/NsecVideo.mp4",F_OK)==0)
+			break;
+	}
+	
+	sprintf(command,"echo \"video\" | mutt -s \"video file\" %s -a %s/NsecVideo.mp4",EMAIL,CAPTURE_PATH);
+	system(command);
+	sprintf(command,"rm %s/NsecVideo.*",CAPTURE_PATH);
+	system(command);
+	return 0;
+}
+
+

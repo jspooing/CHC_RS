@@ -184,16 +184,17 @@ int catchIp(char* buf){
 
 
 	memset(buf,0x00,sizeof(buf));
+	sprintf(buf,"Connected list/");
 	if(cnt > 0){
 	for(i=0; i < cnt; i ++)
 		sprintf(buf,"%s%s/",buf,ip[i]);
 	}
 	else 
-		sprintf(buf,"no connected list/");
+		sprintf(buf,"%sno connected list/",buf);
 
 		sprintf(buf,"%s,",buf);
 	
-		
+	sprintf(buf,"%sBlack list/",buf);		
 	if(bcnt > 0){
 	for(i=0; i < bcnt; i ++)
 		sprintf(buf,"%s%s/",buf,bip[i]);
@@ -226,8 +227,9 @@ int getIp(char arg[][16]){
 	
 	while(nsread(tf) != (TCPINFO *)NULL)
 	{	
-		if(strcmp(tf->localaddr,STREAM_IP)==0&&strcmp(tf->localport,STREAM_PORT)==0)
+		if(strcmp(tf->localaddr,STREAM_IP)==0&&strcmp(tf->localport,STREAM_PORT)==0&&strcmp(tf->stat,"CLOSE")&&strcmp(tf->stat,"TIME_WAIT"))
 		{	
+
 			for(i=0; i<cnt; i++)
 			{
 				if((strcmp(tf->remaddr,arg[i]))==0)
@@ -246,6 +248,7 @@ int getIp(char arg[][16]){
 				sprintf(arg[cnt],"%s",tf->remaddr);
 				
 				cnt++;
+
 			}
 
 		}

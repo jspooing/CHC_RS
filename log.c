@@ -25,7 +25,7 @@ void* t_wLog(void *data)
 	char time[25];
 	int i;
 	int l_cnt=0,n_cnt=0;
-	fd = open("/home/chc/server/log/log.txt",O_APPEND|O_WRONLY|O_CREAT,0666);
+	fd = open("/home/chc/server/log/log.txt",O_APPEND|O_WRONLY|O_CREAT,0644);
 
 	if(fd == -1)
 		printf("LogFILE open err...\n");
@@ -48,9 +48,7 @@ void* t_wLog(void *data)
 				}
 			}
 
-			printf("l_cnt = %d\n",l_cnt);
 			for(i=0 ; i < l_cnt;i++){
-				printf("%s : %d\n",Lip[i],checkLogout(Lip[i],Nip,l_cnt));
 				if(checkLogout(Lip[i],Nip,n_cnt)==1){
 					getLogTime(time);
 					sprintf(buf,"%s%s-%s#Logout,",buf,Lip[i],time);
@@ -62,8 +60,9 @@ void* t_wLog(void *data)
 		str_len = strlen(buf);
 		write(fd,buf,str_len);
 
-		#ifdef _DEBUG	
-			printf("log :\n%s\n",buf);
+		#ifdef _DEBUG
+		if(str_len)
+			printf("%s\n",buf);
 		#endif
 		sleep(1);
 	}
