@@ -195,8 +195,6 @@ void *clnt_connection(void* arg){
 			#endif
 			//write(sock,buf,str_len);
 		}
-		else if(!strcmp(command[0],"capt"))
-			//
 		else if(!strcmp(command[0],"log"))
 			getLog(sock,buf,BUFSIZE);		
 		else if(!strcmp(command[0],"trf"))

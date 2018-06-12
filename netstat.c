@@ -114,6 +114,7 @@ TCPINFO *nsread(TCPINFO *info)
     }
     if (fgets(buf, 256, info->tcpfp) == NULL)
         return (TCPINFO *)NULL;
+	
     // sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
     // 0: 0100007F:A56F 00000000:0000 0A 00000000:00000000 00:00000000 00000000   105        0 10282 1 c34a1c00 3000 0 0 2 -1
     sscanf(buf,"%s %s %s %s %s %s %s %s %s %s", 
